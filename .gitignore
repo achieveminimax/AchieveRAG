@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.trae/
+.vercel/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data files
+data/uploads/*
+!data/uploads/.gitkeep
+data/chroma_db/*
+!data/chroma_db/.gitkeep
+data/app.db
+data/logs/
+
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+backend/data/chroma_db/*
+!backend/data/chroma_db/.gitkeep
+backend/data/app.db
+backend/data/logs/
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Local development
+*.local
+
+# Non-deploy files
+AGENTS.md
+ai.txt
+conftest.py
+test_api.py
+tests/
+开发记录/
+阶段里程报告/
+RAG知识库助手_*文档.md
+data/
+backend/data/
