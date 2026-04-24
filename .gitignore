@@ -121,3 +121,9 @@ tests/
 RAG知识库助手_*文档.md
 data/
 backend/data/
+
+# 学习指南和README文档
+backend/学习指南.md
+backend/README.md
+frontend/学习指南.md
+frontend/README.md
