@@ -38,10 +38,38 @@ env/
 .trae/
 .vercel/
 
-# Environment variables
+# Environment variables - 敏感配置文件
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.test
+.env.staging
+
+# API Keys and Secrets - API 密钥和密钥文件
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+secrets.json
+secrets.yaml
+secrets.yml
+config.local.json
+credentials.json
+credentials.csv
+
+# Token files
+token.json
+*.token
+refresh_token
+access_token
+
+# Password files
+*.password
+*.passwd
+passwords.txt
 
 # Data files
 data/uploads/*
