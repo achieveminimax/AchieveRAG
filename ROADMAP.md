@@ -34,12 +34,14 @@
 
 ### 1.2 核心价值主张
 
-```
-当前：你问我答（被动响应）
-    ↓
-未来：主动服务（智能助理）
-    ↓
-愿景：知识共创（人机协作）
+```mermaid
+graph LR
+    A[当前：你问我答<br/>被动响应] --> B[未来：主动服务<br/>智能助理]
+    B --> C[愿景：知识共创<br/>人机协作]
+    
+    style A fill:#ffcccc
+    style B fill:#ffffcc
+    style C fill:#ccffcc
 ```
 
 ---
@@ -79,28 +81,38 @@
 
 ### 3.1 整体规划概览
 
-```
-2026 Q2          2026 Q3          2026 Q4          2027 Q1
-  │                │                │                │
-  ▼                ▼                ▼                ▼
-┌─────┐        ┌─────┐        ┌─────┐        ┌─────┐
-│Phase│   →    │Phase│   →    │Phase│   →    │Phase│
-│  1  │        │  2  │        │  3  │        │  4  │
-│核心 │        │架构 │        │体验 │        │智能 │
-│增强 │        │升级 │        │升级 │        │升级 │
-└─────┘        └─────┘        └─────┘        └─────┘
-  6周            8周            8周            12周
+```mermaid
+gantt
+    title 项目发展路线图
+    dateFormat  YYYY-MM
+    section 2026年
+    Phase 1: 核心增强    :2026-05, 6w
+    Phase 2: 架构升级    :2026-07, 8w
+    Phase 3: 体验升级    :2026-09, 8w
+    Phase 4: 智能化      :2026-11, 12w
+    section 2027年
+    Phase 5: 生态扩展    :2027-01, 12w
 ```
 
 ### 3.2 版本演进路线
 
-| 版本 | 代号 | 核心特性 | 目标用户 |
-|------|------|----------|----------|
-| v1.0 | 基础版 | 当前版本，核心 RAG 功能 | 个人用户 |
-| v1.5 | 增强版 | 混合检索 + 缓存 + 性能优化 | 个人用户 |
-| v2.0 | 专业版 | 新架构 + 多模态 + React 重构 | 专业用户 |
-| v2.5 | 智能版 | Agent + 工具调用 + 知识图谱 | 高级用户 |
-| v3.0 | 企业版 | 多租户 + SSO + 审计 + 协作 | 企业用户 |
+```mermaid
+graph LR
+    subgraph 版本演进
+        v10[v1.0 基础版<br/>当前] --> v15[v1.5 增强版<br/>混合检索+缓存]
+        v15 --> v20[v2.0 专业版<br/>新架构+多模态]
+        v20 --> v25[v2.5 智能版<br/>Agent+知识图谱]
+        v25 --> v30[v3.0 企业版<br/>多租户+协作]
+        v30 --> v40[v4.0 平台版<br/>生态扩展]
+    end
+    
+    style v10 fill:#ff9999
+    style v15 fill:#ffcc99
+    style v20 fill:#ffff99
+    style v25 fill:#99ff99
+    style v30 fill:#99ccff
+    style v40 fill:#cc99ff
+```
 
 ---
 
@@ -115,6 +127,23 @@
 结合向量检索的语义理解能力和关键词检索的精确匹配能力，提升召回率 20%+
 
 #### 4.1.2 技术方案
+
+```mermaid
+flowchart LR
+    Q[用户查询] --> V[向量检索<br/>语义匹配]
+    Q --> K[关键词检索<br/>BM25]
+    
+    V --> R[RRF 融合算法]
+    K --> R
+    
+    R --> F[融合结果]
+    F --> O[返回 Top-K]
+    
+    style Q fill:#ffcccc
+    style O fill:#ccffcc
+```
+
+**代码实现**:
 
 ```python
 # 混合检索流程
@@ -149,6 +178,20 @@ return fused_results[:top_k]
 
 #### 4.2.2 技术方案
 
+```mermaid
+flowchart TD
+    Q[用户查询] --> R[初步检索<br/>Top-20]
+    R --> P[构建 Query-Doc 对]
+    P --> C[Cross-Encoder<br/>打分]
+    C --> S[按分数排序]
+    S --> O[返回 Top-K]
+    
+    style Q fill:#ffcccc
+    style O fill:#ccffcc
+```
+
+**代码实现**:
+
 ```python
 from sentence_transformers import CrossEncoder
 
@@ -176,6 +219,19 @@ reranked = sorted(zip(candidates, scores), key=lambda x: x[1], reverse=True)
 ### 4.3 查询改写（Query Rewriting）
 
 #### 4.3.1 HyDE（假设文档嵌入）
+
+```mermaid
+flowchart LR
+    Q[原始查询] --> G[生成假设回答<br/>LLM]
+    G --> E[假设回答向量化]
+    E --> S[向量检索]
+    S --> R[返回结果]
+    
+    style Q fill:#ffcccc
+    style R fill:#ccffcc
+```
+
+**代码实现**:
 
 ```python
 # 1. 生成假设回答
@@ -214,33 +270,26 @@ return deduplicate_and_rank(all_results)
 
 #### 4.4.1 多级缓存架构
 
-```
-┌─────────────────────────────────────┐
-│           请求进来                    │
-└─────────────┬───────────────────────┘
-              ▼
-┌─────────────────────────────────────┐
-│  L1: 语义缓存（Semantic Cache）       │
-│  - 相似问题直接返回缓存结果            │
-│  - TTL: 1小时                         │
-└─────────────┬───────────────────────┘
-              │ 未命中
-              ▼
-┌─────────────────────────────────────┐
-│  L2: 检索结果缓存                     │
-│  - 相同查询的检索结果缓存              │
-│  - TTL: 30分钟                        │
-└─────────────┬───────────────────────┘
-              │ 未命中
-              ▼
-┌─────────────────────────────────────┐
-│  L3: 向量缓存                         │
-│  - 查询向量的 Embedding 缓存          │
-│  - TTL: 永久                          │
-└─────────────┬───────────────────────┘
-              │ 未命中
-              ▼
-        执行完整流程
+```mermaid
+flowchart TD
+    R[请求进来] --> L1{L1: 语义缓存<br/>TTL: 1小时}
+    L1 -->|命中| O1[直接返回结果]
+    L1 -->|未命中| L2{L2: 检索缓存<br/>TTL: 30分钟}
+    
+    L2 -->|命中| O2[返回检索结果]
+    L2 -->|未命中| L3{L3: 向量缓存<br/>TTL: 永久}
+    
+    L3 -->|命中| E[使用缓存向量]
+    L3 -->|未命中| G[生成 Embedding]
+    
+    E --> P[执行检索]
+    G --> P
+    P --> O3[返回结果]
+    
+    style R fill:#ffcccc
+    style O1 fill:#ccffcc
+    style O2 fill:#ccffcc
+    style O3 fill:#ccffcc
 ```
 
 #### 4.4.2 Redis 集成
@@ -295,6 +344,28 @@ def cache_response(ttl=3600):
 #### 5.1.1 PostgreSQL + pgvector 替换 SQLite
 
 **迁移方案**:
+
+```mermaid
+flowchart LR
+    subgraph 当前架构
+        S1[SQLite<br/>关系数据]
+        C1[ChromaDB<br/>向量数据]
+    end
+    
+    subgraph 目标架构
+        P[PostgreSQL<br/>关系+向量<br/>pgvector]
+    end
+    
+    S1 --> M[数据迁移脚本]
+    C1 --> M
+    M --> P
+    
+    style S1 fill:#ffcccc
+    style C1 fill:#ffcccc
+    style P fill:#ccffcc
+```
+
+**代码实现**:
 
 ```python
 # 新的数据库模型
@@ -355,118 +426,71 @@ def generate_summary(document_id: str):
 
 #### 5.2.2 文档处理流程改造
 
-```
-上传文件
-    │
-    ▼
-┌─────────────┐
-│ 保存到临时目录 │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ 创建数据库记录 │ ← 状态: pending
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ 提交 Celery  │
-│ 异步任务     │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ 后台处理     │ ← 状态: processing
-│ - 解析      │
-│ - 分块      │
-│ - 索引      │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ 完成        │ ← 状态: completed / failed
-└─────────────┘
+```mermaid
+flowchart TD
+    A[用户上传文件] --> B[保存到临时目录]
+    B --> C[创建数据库记录<br/>状态: pending]
+    C --> D[提交 Celery 任务]
+    D --> E[后台处理<br/>状态: processing]
+    
+    E --> F1[解析文档]
+    E --> F2[文本分块]
+    E --> F3[生成 Embedding]
+    E --> F4[存入向量库]
+    
+    F1 --> G[完成<br/>状态: completed]
+    F2 --> G
+    F3 --> G
+    F4 --> G
+    
+    E --> H[失败<br/>状态: failed]
+    
+    style A fill:#ffcccc
+    style G fill:#ccffcc
+    style H fill:#ff9999
 ```
 
 **预计工时**: 1.5周
 
 ### 5.3 Docker 容器化
 
-#### 5.3.1 Dockerfile
+#### 5.3.1 Docker Compose 架构
 
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# 安装依赖
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制代码
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
-
-# 暴露端口
-EXPOSE 8000
-
-# 启动命令
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-#### 5.3.2 Docker Compose
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/rag
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - db
-      - redis
-      - chroma
-
-  worker:
-    build: .
-    command: celery -A backend.tasks worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/rag
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: ankane/pgvector:latest
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: rag
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redisdata:/data
-
-  chroma:
-    image: chromadb/chroma:latest
-    volumes:
-      - chromadata:/chroma/chroma
-
-volumes:
-  pgdata:
-  redisdata:
-  chromadata:
+```mermaid
+graph TB
+    subgraph Docker Compose
+        N[Nginx<br/>反向代理]
+        A[App 服务<br/>FastAPI]
+        W[Worker 服务<br/>Celery]
+        
+        subgraph 数据服务
+            P[(PostgreSQL<br/>pgvector)]
+            R[(Redis<br/>缓存+队列)]
+            C[(ChromaDB<br/>向量存储)]
+        end
+        
+        subgraph 数据卷
+            V1[pgdata]
+            V2[redisdata]
+            V3[chromadata]
+            V4[uploads]
+        end
+    end
+    
+    User --> N
+    N --> A
+    A --> P
+    A --> R
+    A --> C
+    A -.-> V4
+    
+    R --> W
+    W --> P
+    W --> C
+    
+    P -.-> V1
+    R -.-> V2
+    C -.-> V3
 ```
 
 **预计工时**: 1周
@@ -572,60 +596,43 @@ frontend-new/
 
 ### 6.2 多模态支持
 
-#### 6.2.1 图片理解
+#### 6.2.1 多模态交互流程
 
-```typescript
-// 图片上传组件
-interface ImageUploadProps {
-  onImageAnalyze: (image: File, question: string) => Promise<void>;
-}
-
-// 调用 GPT-4V API
-const analyzeImage = async (imageBase64: string, question: string) => {
-  const response = await fetch('/api/chat/vision', {
-    method: 'POST',
-    body: JSON.stringify({
-      image: imageBase64,
-      question,
-    }),
-  });
-  return response.json();
-};
-```
-
-#### 6.2.2 语音输入/输出
-
-```typescript
-// 语音识别（Whisper）
-const useSpeechToText = () => {
-  const [transcript, setTranscript] = useState('');
-  
-  const startRecording = async () => {
-    const mediaRecorder = new MediaRecorder(stream);
-    const audioChunks: Blob[] = [];
+```mermaid
+flowchart TD
+    subgraph 输入方式
+        T[文本输入]
+        I[图片上传]
+        V[语音输入]
+    end
     
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      const text = await transcribeAudio(audioBlob);
-      setTranscript(text);
-    };
+    subgraph 处理层
+        TP[文本处理]
+        IP[图像理解<br/>GPT-4V]
+        VP[语音识别<br/>Whisper]
+    end
     
-    mediaRecorder.start();
-  };
-  
-  return { transcript, startRecording };
-};
-
-// 语音合成（TTS）
-const speak = async (text: string) => {
-  const response = await fetch('/api/tts', {
-    method: 'POST',
-    body: JSON.stringify({ text }),
-  });
-  const audioBlob = await response.blob();
-  const audio = new Audio(URL.createObjectURL(audioBlob));
-  audio.play();
-};
+    subgraph 输出方式
+        OT[文本回答]
+        OV[语音播报<br/>TTS]
+    end
+    
+    T --> TP
+    I --> IP
+    V --> VP
+    
+    TP --> R[RAG 处理]
+    IP --> R
+    VP --> R
+    
+    R --> OT
+    R --> OV
+    
+    style T fill:#ccffff
+    style I fill:#ccffff
+    style V fill:#ccffff
+    style OT fill:#ccffcc
+    style OV fill:#ccffcc
 ```
 
 **预计工时**: 2周
@@ -688,7 +695,30 @@ const createBranch = (messageId: string) => {
 
 ### 7.1 Agent 架构
 
-#### 7.1.1 ReAct Agent 实现
+#### 7.1.1 ReAct Agent 流程
+
+```mermaid
+flowchart TD
+    Q[用户问题] --> T[思考<br/>Think]
+    T --> D{决策}
+    
+    D -->|搜索知识库| A1[行动<br/>Action]
+    D -->|搜索互联网| A2[行动<br/>Action]
+    D -->|直接回答| R[回答<br/>Respond]
+    
+    A1 --> O1[观察<br/>Observation]
+    A2 --> O2[观察<br/>Observation]
+    
+    O1 --> T
+    O2 --> T
+    
+    T -->|无需行动| R
+    
+    style Q fill:#ffcccc
+    style R fill:#ccffcc
+```
+
+#### 7.1.2 ReAct Agent 实现
 
 ```python
 from typing import TypedDict, Annotated
@@ -749,132 +779,70 @@ workflow.add_edge("respond", END)
 agent = workflow.compile()
 ```
 
-#### 7.1.2 工具定义
-
-```python
-from langchain.tools import BaseTool
-
-class CalculatorTool(BaseTool):
-    name = "calculator"
-    description = "用于数学计算"
-    
-    def _run(self, expression: str) -> str:
-        try:
-            result = eval(expression)
-            return str(result)
-        except:
-            return "计算错误"
-
-class WebSearchTool(BaseTool):
-    name = "web_search"
-    description = "当知识库中没有相关信息时，搜索互联网"
-    
-    def _run(self, query: str) -> str:
-        # 调用搜索 API
-        results = search_api.search(query)
-        return format_results(results)
-
-class KnowledgeBaseTool(BaseTool):
-    name = "knowledge_base"
-    description = "搜索个人知识库"
-    
-    def _run(self, query: str) -> str:
-        results = rag_chain.retrieve(query)
-        return format_context(results)
-```
-
 **预计工时**: 3周
 
 ### 7.2 知识图谱
 
-#### 7.2.1 实体关系抽取
+#### 7.2.1 知识图谱构建流程
 
-```python
-from langchain_experimental.graph_transformers import LLMGraphTransformer
-
-# 使用 LLM 抽取实体和关系
-transformer = LLMGraphTransformer(llm=llm)
-
-# 从文档抽取图谱
-documents = load_documents()
-graph_documents = transformer.convert_to_graph_documents(documents)
-
-# 存入 Neo4j
-neo4j_graph.add_graph_documents(graph_documents)
-```
-
-#### 7.2.2 图谱问答
-
-```python
-# 基于图谱的问答
-def graph_rag(question: str) -> str:
-    # 1. 从问题抽取实体
-    entities = extract_entities(question)
+```mermaid
+flowchart TD
+    D[文档] --> E[实体抽取<br/>LLM]
+    E --> R[关系抽取]
+    R --> G[构建图谱]
+    G --> N[(Neo4j<br/>图数据库)]
     
-    # 2. 在图谱中查找相关子图
-    subgraph = neo4j_graph.query(f"""
-    MATCH (e)-[r]-(related)
-    WHERE e.name IN {entities}
-    RETURN e, r, related
-    """)
+    Q[用户查询] --> EQ[查询实体识别]
+    EQ --> SQ[子图查询]
+    N --> SQ
+    SQ --> C[上下文构建]
+    C --> A[生成回答]
     
-    # 3. 将子图转换为文本
-    context = graph_to_text(subgraph)
-    
-    # 4. 生成回答
-    answer = llm.generate(f"基于以下信息回答问题：\n{context}\n\n问题：{question}")
-    return answer
+    style D fill:#ffcccc
+    style Q fill:#ffcccc
+    style A fill:#ccffcc
 ```
 
 **预计工时**: 4周
 
 ### 7.3 个性化与记忆
 
-#### 7.3.1 用户画像
+#### 7.3.1 用户画像与记忆系统
 
-```python
-class UserProfile:
-    """用户画像管理"""
+```mermaid
+flowchart TD
+    subgraph 用户画像
+        P[专业领域]
+        I[兴趣偏好]
+        T[常用术语]
+        S[风格偏好]
+    end
     
-    def __init__(self, user_id: str):
-        self.user_id = user_id
-        self.profile = self._load_profile()
+    subgraph 记忆系统
+        STM[短期记忆<br/>对话上下文]
+        LTM[长期记忆<br/>重要信息]
+    end
     
-    def update_from_conversation(self, conversation: list):
-        """从对话中提取用户偏好"""
-        prompt = f"""
-        从以下对话中提取用户画像信息：
-        - 专业领域
-        - 兴趣偏好
-        - 常用术语
-        - 回答风格偏好
-        
-        对话：{conversation}
-        """
-        extracted = llm.generate(prompt)
-        self.profile.update(extracted)
-        self._save_profile()
-```
-
-#### 7.3.2 长期记忆
-
-```python
-class LongTermMemory:
-    """长期记忆系统"""
+    C[对话内容] --> EP[提取画像]
+    C --> EM[提取记忆]
     
-    def __init__(self):
-        self.memory_store = ChromaDB(collection="long_term_memory")
+    EP --> P
+    EP --> I
+    EP --> T
+    EP --> S
     
-    def add_memory(self, content: str, importance: float):
-        """添加记忆"""
-        self.memory_store.add(
-            documents=[content],
-            metadatas=[{"importance": importance, "timestamp": now()}]
-        )
+    EM --> STM
+    EM --> LTM
     
-    def retrieve_relevant_memories(self, query: str) -> list:
-        """检索相关记忆"""
-        return self.memory_store.similarity_search(query, top_k=5)
+    P --> R[RAG 回答生成]
+    I --> R
+    T --> R
+    S --> R
+    STM --> R
+    LTM --> R
+    
+    style C fill:#ffcccc
+    style R fill:#ccffcc
 ```
 
 **预计工时**: 2周
@@ -897,6 +865,37 @@ class LongTermMemory:
 **目标**: 构建完整的知识管理生态
 
 ### 8.1 第三方集成
+
+```mermaid
+graph LR
+    subgraph 知识源
+        N[Notion]
+        F[飞书]
+        G[Google Drive]
+        S[Slack]
+        GH[GitHub]
+        W[微信]
+    end
+    
+    subgraph 同步服务
+        Sync[同步服务]
+    end
+    
+    subgraph 核心系统
+        Core[RAG 核心]
+    end
+    
+    N --> Sync
+    F --> Sync
+    G --> Sync
+    S --> Sync
+    GH --> Sync
+    W --> Sync
+    
+    Sync --> Core
+    
+    style Core fill:#ccffcc
+```
 
 | 平台 | 集成内容 | 优先级 |
 |------|----------|--------|
@@ -937,6 +936,21 @@ class LongTermMemory:
 
 ### 9.2 性能目标
 
+```mermaid
+graph LR
+    subgraph 性能指标提升
+        A[首字节响应<br/>2s → 200ms]
+        B[流式首 token<br/>3s → 500ms]
+        C[并发用户<br/>10 → 1000]
+        D[文档处理<br/>10页/s → 100页/s]
+    end
+    
+    style A fill:#ffcccc
+    style B fill:#ffffcc
+    style C fill:#ccffcc
+    style D fill:#ccffcc
+```
+
 | 指标 | 当前 | Phase 2 目标 | Phase 3 目标 |
 |------|------|--------------|--------------|
 | 首字节响应 | 2s | 500ms | 200ms |
@@ -960,27 +974,32 @@ class LongTermMemory:
 
 ### 10.2 时间线汇总
 
-```
-2026年
-├── 4月（当前）
-│   └── v1.0 基础版 ✅
-├── 5-6月
-│   └── Phase 1: 核心增强（6周）
-│       └── v1.5 增强版
-├── 7-8月
-│   └── Phase 2: 架构升级（8周）
-│       └── v2.0 专业版
-├── 9-10月
-│   └── Phase 3: 体验升级（8周）
-│       └── v2.5 智能版
-└── 11-12月
-    └── Phase 4: 智能化（12周）
-        └── v3.0 企业版
-
-2027年
-└── Q1-Q2
-    └── Phase 5: 生态扩展
-        └── v4.0 平台版
+```mermaid
+timeline
+    title 项目发展时间线
+    
+    2026年4月 : v1.0 基础版
+              : 当前版本 ✅
+              
+    2026年5-6月 : Phase 1: 核心增强
+                : 混合检索 + 缓存
+                : v1.5 增强版
+                
+    2026年7-8月 : Phase 2: 架构升级
+                : PostgreSQL + Docker
+                : v2.0 专业版
+                
+    2026年9-10月 : Phase 3: 体验升级
+                 : React + 多模态
+                 : v2.5 智能版
+                 
+    2026年11-12月 : Phase 4: 智能化
+                  : Agent + 知识图谱
+                  : v3.0 企业版
+                  
+    2027年Q1-Q2 : Phase 5: 生态扩展
+                : 第三方集成
+                : v4.0 平台版
 ```
 
 ### 10.3 里程碑检查点
